@@ -2164,17 +2164,19 @@ function(qt6_target_qml_sources target)
     endif()
 
     if(copied_files OR generated_sources_other_scope)
+        _qt_internal_get_escaped_uri("${uri}" escaped_uri)
+
         if(CMAKE_VERSION VERSION_LESS 3.19)
             # Called from qt6_add_qml_module() and we know there can only be
             # this one call. With those constraints, we can use a custom target
             # to implement the necessary dependencies to get files copied to the
             # build directory when their source files change.
-            add_custom_target(${target}_tooling ALL
+            add_custom_target(${target}_tooling_${escaped_uri} ALL
                 DEPENDS
                     ${copied_files}
                     ${generated_sources_other_scope}
             )
-            add_dependencies(${target} ${target}_tooling)
+            add_dependencies(${target} ${target}_tooling_${escaped_uri})
         else()
             # We could be called multiple times and a custom target can only
             # have file-level dependencies added at the time the target is
@@ -2182,11 +2184,11 @@ function(qt6_target_qml_sources target)
             # private sources to those and have the library act as a build
             # system target from CMake 3.19 onward, and we can add the sources
             # progressively over multiple calls.
-            if(NOT TARGET ${target}_tooling)
-                add_library(${target}_tooling INTERFACE)
-                add_dependencies(${target} ${target}_tooling)
+            if(NOT TARGET ${target}_tooling_${escaped_uri})
+                add_library(${target}_tooling_${escaped_uri} INTERFACE)
+                add_dependencies(${target} ${target}_tooling_${escaped_uri})
             endif()
-            target_sources(${target}_tooling PRIVATE
+            target_sources(${target}_tooling_${escaped_uri} PRIVATE
                 ${copied_files}
                 ${generated_sources_other_scope}
             )
